@@ -239,4 +239,34 @@ class AnalisadorSintatico:
         self.expressao()
         while self.tokenAtual().tokens_type == "COMMA": # Se for uma vírgula, consome o token e a próxima expressão
             self.avancaToken("COMMA")
-            self.expressao()   
+            self.expressao()
+    
+    def expressao(self):
+        self.expressaoLogica()
+
+    def expressaoLogica(self):
+        if self.tokenAtual().tokens_type == "NOT": 
+            self.avancaToken("NOT")
+            self.expressaoLogica()
+        else:
+            self.expressaoRelacional()
+        while self.tokenAtual().tokens_type in ("AND", "OR"): 
+            token = self.tokenAtual().tokens_type
+            self.avancaToken(token)
+            self.expressaoRelacional()
+
+    def expressaoRelacional(self):
+        self.expressaoAritmetica()
+        while self.tokenAtual().tokens_type in ("EQUAL", "NOT_EQUAL", "LESS_THAN", "GREATER_THAN", "LESS_EQUAL", "GREATER_EQUAL"): # < less than, > greater than, <= less equal, >= greater equal
+            token = self.tokenAtual().tokens_type
+            self.avancaToken(token)
+            self.expressaoAritmetica()
+
+    def expressaoAritmetica(self):
+        self.expressaoMultiplicativa()
+        while self.tokenAtual().tokens_type in ("PLUS", "MINUS"):
+            token = self.tokenAtual().tokens_type
+            self.avancaToken(token)
+            self.expressaoMultiplicativa()
+
+    
