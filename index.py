@@ -1,5 +1,5 @@
 class Tokens:
-    def __init__(self, tokens_type, tokens_value, linhas, colunas): #Contrutor da classe Tokens
+    def __init__(self, tokens_type, tokens_value, linhas, colunas): 
         self.tokens_type = tokens_type
         self.tokens_value = tokens_value
         self.linhas = linhas
@@ -7,29 +7,29 @@ class Tokens:
 
     
     def __repr__(self):
-        return f"Tokens({self.tokens_type}, {self.tokens_value}, {self.linhas}, {self.colunas})" #Representação da classe Tokens
+        return f"Tokens({self.tokens_type}, {self.tokens_value}, {self.linhas}, {self.colunas})" 
 
 class AnalisadorSintatico:
-    def __init__(self, tokens): #Construtor da classe AnalisadorSintatico
+    def __init__(self, tokens): 
         self.tokens = tokens
-        self.pos = 0 #Posição atual do token
-        self.tokens.append(Tokens("EOF", "EOF", linhas= -1, colunas= -1)) #Adiciona um token EOF para indicar o final
+        self.pos = 0 
+        self.tokens.append(Tokens("EOF", "EOF", linhas= -1, colunas= -1)) 
 
-    def tokenAtual(self): #Retorna o token atual
+    def tokenAtual(self): 
         return self.tokens[self.pos]
     
-    def proximoToken(self, k = 1): #Retorna o próximo token
+    def proximoToken(self, k = 1):
         if self.pos + k < len(self.tokens):
             return self.tokens[self.pos + k]
         else:
             return Tokens("EOF", "EOF", linhas= -1, colunas= -1)
         
-    def erro(self, mensagem): #Lança um erro de sintaxe
+    def erro(self, mensagem): 
         token = self.tokenAtual()
         raise Exception(f"Erro de sintaxe: {mensagem} na linha {token.linhas} e coluna {token.colunas}"
                         f" token: {token.tokens_value} encontrado. Esperado: {mensagem}")
         
-    def avancaToken(self, token_type): #Consome o token atual e avança para o próximo
+    def avancaToken(self, token_type): 
         token = self.tokenAtual()
         if token.tokens_type == token_type:
             self.pos += 1
@@ -37,12 +37,12 @@ class AnalisadorSintatico:
             self.erro(token_type)
 
 
-    def programa(self): #Inicia o programa. Enquanto não encontrar o token EOF, continua consumindo tokens. Retorna True se o programa for válido.
+    def programa(self): 
         while self.tokenAtual().tokens_type != "EOF":
             self.declaracao()
         return True
     
-    def declaracao(self): #Verifica o tipo de declaração e chama a função correspondente
+    def declaracao(self): 
         if self.tokenAtual().tokens_type == "VAR":
             self.variavel()
         elif self.tokenAtual().tokens_type == "FUNC":
@@ -58,69 +58,69 @@ class AnalisadorSintatico:
         else:
             self.erro("declaracao")
         
-    def variavel(self): #Verifica se a declaração é uma variável e consome os tokens correspondentes
+    def variavel(self):
         self.avancaToken("VAR")
         self.avancaToken("TYPE")
         self.avancaToken("ID")
-        if self.tokenAtual().tokens_type == "EQUAL": #Se for um sinal de igual, consome o token e a expressão
+        if self.tokenAtual().tokens_type == "EQUAL":
             self.avancaToken("EQUAL")
             self.expressao()
-        self.avancaToken("SEMICOLON") #Consome o ponto e vírgula no final da declaração
+        self.avancaToken("SEMICOLON")
     
-    def funcao(self): #Verifica se a declaração é uma função e consome os tokens correspondentes
+    def funcao(self):
         self.avancaToken("FUNC")
         self.avancaToken("TYPE")
         self.avancaToken("ID")
         self.avancaToken("LPAREN")
-        if self.tokenAtual().tokens_type != "RPAREN": #Se não for um parêntese direito, consome os parâmetros
+        if self.tokenAtual().tokens_type != "RPAREN":
             self.parametros()
         self.avancaToken("RPAREN")
         self.bloco()    
     
-    def parametros(self): #Verifica se os parâmetros estão corretos e consome os tokens correspondentes
+    def parametros(self):
         self.parametros2()
-        while self.tokenAtual().tokens_type == "COMMA": #Se for uma vírgula, consome o token e o próximo parâmetro
+        while self.tokenAtual().tokens_type == "COMMA": 
             self.avancaToken("COMMA")
             self.parametros2()
 
-    def parametros2(self): #Verifica se o parâmetro está correto e consome os tokens correspondentes
+    def parametros2(self): 
         self.avancaToken("TYPE")
-        if self.tokenAtual().tokens_type == "ELIPSIS": #Se for um parenteses, consome o token
+        if self.tokenAtual().tokens_type == "ELIPSIS": 
             self.avancaToken("ELIPSIS")
             self.avancaToken("ID")
         else:
             self.avancaToken("ID")
-            if self.tokenAtual().tokens_type == "LBRACKET": #Se for um colchete, consome o token e o colchete direito
+            if self.tokenAtual().tokens_type == "LBRACKET": 
                 self.avancaToken("LBRACKET")
                 self.avancaToken("RBRACKET")
 
-    def bloco(self): #Verifica se o bloco está correto e consome os tokens correspondentes
+    def bloco(self): 
         self.avancaToken("LBRACE")
         while self.tokenAtual().tokens_type != "RBRACE":
             self.declaracao()
         self.avancaToken("RBRACE")
 
-    def estrutura(self): #Verifica se a estrutura está correta e consome os tokens correspondentes
+    def estrutura(self): 
         self.avancaToken("STRUCT")
         self.avancaToken("ID")
         self.avancaToken("LBRACE")
-        while self.tokenAtual().tokens_type != "RBRACE": #Enquanto não encontrar o colchete direito, consome os campos
+        while self.tokenAtual().tokens_type != "RBRACE": 
             self.variavel()
         self.avancaToken("RBRACE")
         self.avancaToken("SEMICOLON")
 
-    def comentario(self): #Verifica se o comentário está correto e consome os tokens correspondentes
+    def comentario(self): 
         if self.tokenAtual().tokens_type in ("COMENTARIO_LINHA", "COMENTARIO_BLOCO"):
             self.avancaToken(self.tokenAtual().tokens_type)
         else:
             self.erro("comentario")
     
-    def expressao(self): #Verifica se a expressão está correta e consome os tokens correspondentes
-        if self.tokenAtual().tokens_type == "ID": #Se for um identificador, consome o token e verifica se é uma atribuição ou uma chamada de função
+    def expressao(self): 
+        if self.tokenAtual().tokens_type == "ID": 
             self.avancaToken("ID")
-            if self.tokenAtual().tokens_type == "LBRACKET": #Se for um colchete, consome o token e a expressão
+            if self.tokenAtual().tokens_type == "LBRACKET": 
                 self.array() 
-        elif self.tokenAtual().tokens_type in ("NUM_INT", "NUM_FLOAT", "STRING"): #Se for um número inteiro, número float ou string, consome o token
+        elif self.tokenAtual().tokens_type in ("NUM_INT", "NUM_FLOAT", "STRING"): 
             self.avancaToken(self.tokenAtual().tokens_type)
         else:
             self.erro("expressao")
@@ -128,16 +128,16 @@ class AnalisadorSintatico:
     def atribuicao(self): 
         if self.tokenAtual().tokens_type == "ID":
             self.avancaToken("ID")
-            if self.tokenAtual().tokens_type in ("EQUAL", "PLUS_EQUAL", "MINUS_EQUAL", "MULTIPLY_EQUAL", "DIVIDE_EQUAL", "MODULO_EQUAL", "AND_EQUAL", "OR_EQUAL"): #Se for um sinal de atribuição, consome o token e a expressão
+            if self.tokenAtual().tokens_type in ("EQUAL", "PLUS_EQUAL", "MINUS_EQUAL", "MULTIPLY_EQUAL", "DIVIDE_EQUAL", "MODULO_EQUAL", "AND_EQUAL", "OR_EQUAL"):
                 self.avancaToken(self.tokenAtual().tokens_type)
                 self.expressao()
             else: 
-                if self.tokenAtual().tokens_type in ("NUM_INT", "NUM_FLOAT", "STRING"): # Se for um número inteiro, número float ou string, consome o token
+                if self.tokenAtual().tokens_type in ("NUM_INT", "NUM_FLOAT", "STRING"):
                     self.avancaToken(self.tokenAtual().tokens_type)
                 else:
                     self.erro("expressao")
     
-    def estruturaControle(self): #Verifica o tipo de estrutura de controle e chama a função correspondente
+    def estruturaControle(self): 
         if self.tokenAtual().tokens_type == "IF":
             self.estruturaIf()
         elif self.tokenAtual().tokens_type == "WHILE":
@@ -156,7 +156,7 @@ class AnalisadorSintatico:
             self.erro("estrutura de controle")
 
     
-    def estruturaIf(self): #Verifica se a estrutura if está correta e consome os tokens correspondentes
+    def estruturaIf(self): 
         self.avancaToken("IF")
         self.avancaToken("LPAREN")
         self.expressao()
@@ -166,14 +166,14 @@ class AnalisadorSintatico:
             self.avancaToken("ELSE")
             self.bloco()
         
-    def estruturaWhile(self): #Verifica se a estrutura while está correta e consome os tokens correspondentes
+    def estruturaWhile(self):
         self.avancaToken("WHILE")
         self.avancaToken("LPAREN")
         self.expressao()
         self.avancaToken("RPAREN")
         self.bloco()
     
-    def estruturaFor(self): #Verifica se a estrutura for está correta e consome os tokens correspondentes
+    def estruturaFor(self): 
         self.avancaToken("FOR")
         self.avancaToken("LPAREN")
         self.expressao()
@@ -184,62 +184,62 @@ class AnalisadorSintatico:
         self.avancaToken("RPAREN")
         self.bloco()
     
-    def estruturaSwitch(self): #Verifica se a estrutura switch está correta e consome os tokens correspondentes
+    def estruturaSwitch(self): 
         self.avancaToken("SWITCH")
         self.avancaToken("LPAREN")
         self.expressao()
         self.avancaToken("RPAREN")
-        self.caseList() # Lista de cases dentro do switch
+        self.caseList() 
     
     def caseList(self):  
         self.avancaToken("LBRACE")
-        while self.tokenAtual().tokens_type in ("CASE", "DEFAULT"): # Enquanto não encontrar o colchete direito, consome os cases
-            self.caseDecl() #Chama a função que trata os cases
+        while self.tokenAtual().tokens_type in ("CASE", "DEFAULT"): 
+            self.caseDecl() 
         self.avancaToken("RBRACE")
 
            
     def caseDecl(self): 
-        if self.tokenAtual().tokens_type == "CASE": #Verifica se o token atual é um case
+        if self.tokenAtual().tokens_type == "CASE": 
             self.avancaToken("CASE")
             self.expressao()
             self.avancaToken("COLON")
             self.bloco()
-        elif self.tokenAtual().tokens_type == "DEFAULT": #Verifica se o token atual é um default
+        elif self.tokenAtual().tokens_type == "DEFAULT": 
             self.avancaToken("DEFAULT")
             self.avancaToken("COLON")
             self.bloco()
         else:
             self.erro("declaração de case")
     
-    def estruturaBreak(self): #Verifica se a estrutura break está correta e consome os tokens correspondentes
+    def estruturaBreak(self): 
         self.avancaToken("BREAK")
         self.avancaToken("SEMICOLON")
     
-    def estruturaContinue(self): #Verifica se a estrutura continue está correta e consome os tokens correspondentes
+    def estruturaContinue(self): 
         self.avancaToken("CONTINUE")
         self.avancaToken("SEMICOLON")
     
-    def estruturaReturn(self): #Verifica se a estrutura return está correta e consome os tokens correspondentes
+    def estruturaReturn(self): 
         self.avancaToken("RETURN")
         self.expressao()
         self.avancaToken("SEMICOLON")
 
-    def array(self): #Verifica se o token atual é um array e consome os tokens correspondentes
+    def array(self):
         self.avancaToken("ID")
         self.avancaToken("LBRACKET")
-        if self.tokenAtual().tokens_type != "RBRACKET": #Se não for um colchete direito
-            self.expressao() #Chama a função de expressão
+        if self.tokenAtual().tokens_type != "RBRACKET": 
+            self.expressao()
         self.avancaToken("RBRACKET")
 
-    def arrayInicializacao(self): #Verifica se é uma inicialização de array 
+    def arrayInicializacao(self):
         self.avancaToken("LBRACE")
-        if self.tokenAtual().tokens_type != "RBRACE": #Se não for um colchete direito
-            self.expressaoLista() #Chama a função de lista de expressões
+        if self.tokenAtual().tokens_type != "RBRACE":
+            self.expressaoLista() 
         self.avancaToken("RBRACE")
 
     def expressaoLista(self):
         self.expressao()
-        while self.tokenAtual().tokens_type == "COMMA": # Se for uma vírgula, consome o token e a próxima expressão
+        while self.tokenAtual().tokens_type == "COMMA":
             self.avancaToken("COMMA")
             self.expressao()
     
@@ -259,7 +259,7 @@ class AnalisadorSintatico:
 
     def expressaoRelacional(self):
         self.expressaoAritmetica()
-        while self.tokenAtual().tokens_type in ("EQUAL", "NOT_EQUAL", "LESS_THAN", "GREATER_THAN", "LESS_EQUAL", "GREATER_EQUAL"): # < less than, > greater than, <= less equal, >= greater equal
+        while self.tokenAtual().tokens_type in ("EQUAL", "NOT_EQUAL", "LESS_THAN", "GREATER_THAN", "LESS_EQUAL", "GREATER_EQUAL"): 
             token = self.tokenAtual().tokens_type
             self.avancaToken(token)
             self.expressaoAritmetica()
@@ -274,43 +274,41 @@ class AnalisadorSintatico:
 
 
     def expressaoMultiplicativa(self):
-    #analisa expressao multiplicativa
-        self.expressaoUnaria()  # começa analisando expressões unarias (+,-, ...)
-        while self.tokenAtual().tokens_type in ("MULTIPLY", "DIVIDE", "MODULO"):  # verifica operadores de multiplicacao
-            token = self.tokenAtual().tokens_type  # pega o operador
-            self.avancaToken(token)  # consome o operador
-            self.expressaoUnaria()  # passa para a proxima expressao depois do multiplicativo
+        self.expressaoUnaria() 
+        while self.tokenAtual().tokens_type in ("MULTIPLY", "DIVIDE", "MODULO"): 
+            token = self.tokenAtual().tokens_type 
+            self.avancaToken(token)
+            self.expressaoUnaria() 
 
     def expressaoUnaria(self):
         if self.tokenAtual().tokens_type == "MINUS":
             self.avancaToken("MINUS")
             self.expressaoUnaria()
-        elif self.tokenAtual().tokens_type in ("PLUSPLUS", "MINUSMINUS"):  # checa se é mais(+) ou menos(-)
+        elif self.tokenAtual().tokens_type in ("PLUSPLUS", "MINUSMINUS"): 
             token = self.tokenAtual().tokens_type 
-            self.avancaToken(token)  # consome
+            self.avancaToken(token)  
             self.expressaoPostfix() 
         else:
             self.expressaoPostfix()
 
     def expressaoPostfix(self):
-    # analisa expressao postfix
-        self.primaria()  # analisa tokens primarios
+        self.primaria() 
         while self.tokenAtual().tokens_type in ("LBRACKET", "LPAREN", "DOT", "ARROW"):
-            if self.tokenAtual().tokens_type == "LBRACKET":  # se for um arrat
-                self.avancaToken("LBRACKET")  # consome o Lbracket
-                self.expressao()  # analisa expressao
-                self.avancaToken("RBRACKET")  # consome
+            if self.tokenAtual().tokens_type == "LBRACKET":
+                self.avancaToken("LBRACKET") 
+                self.expressao() 
+                self.avancaToken("RBRACKET") 
             elif self.tokenAtual().tokens_type == "LPAREN":  
-                self.avancaToken("LPAREN")  # consome parenteses
+                self.avancaToken("LPAREN")  
                 if self.tokenAtual().tokens_type != "RPAREN":
-                    self.argumentos()  # analisa args
-                self.avancaToken("RPAREN")  # consome parenteses
-            elif self.tokenAtual().tokens_type == "DOT":  #objeto-> campo
-                self.avancaToken("DOT")  # consome ponto
+                    self.argumentos() 
+                self.avancaToken("RPAREN") 
+            elif self.tokenAtual().tokens_type == "DOT": 
+                self.avancaToken("DOT") 
                 self.avancaToken("ID") 
-            elif self.tokenAtual().tokens_type == "ARROW":  # acesso a objeto -> campo
-                self.avancaToken("ARROW")  # consome ->
-                self.avancaToken("ID")  # consome identificador
+            elif self.tokenAtual().tokens_type == "ARROW": 
+                self.avancaToken("ARROW") 
+                self.avancaToken("ID")  
 
     def argumentos(self):
         if self.tokenAtual().tokens_type == "RPAREN":
@@ -320,7 +318,7 @@ class AnalisadorSintatico:
 
     def expressaoLista(self):
         self.expressao()
-        while self.tokenAtual().tokens_type == "COMMA": #se houver virgula consome e analisa.
+        while self.tokenAtual().tokens_type == "COMMA": 
             self.avancaToken("COMMA")
             self.expressao()
 
