@@ -49,10 +49,12 @@ class AnalisadorSintatico:
             self.funcao()
         elif self.tokenAtual().tokens_type == "STRUCT":
             self.estrutura()
-        elif self.tokenAtual().tokens_type == "COMMENT":
+        elif self.tokenAtual().tokens_type in ("COMENTARIO_LINHA", "COMENTARIO_BLOCO"):
             self.comentario()
         elif self.tokenAtual().tokens_type in ("IF", "ELSE", "WHILE", "FOR", "SWITCH", "BREAK", "CONTINUE", "RETURN"):
             self.estruturaControle()
+        elif self.tokenAtual().tokens_type in ("ID", "NUM_INT", "NUM_FLOAT", "STRING", "LPAREN"):
+            self.expressao()
         else:
             self.erro("declaracao")
         
@@ -271,70 +273,90 @@ class AnalisadorSintatico:
             ##
 
 
-def expressaoMultiplicativa(self):
-  #analisa expressao multiplicativa
-    self.expressaoUnaria()  # começa analisando expressões unarias (+,-, ...)
-    while self.tokenAtual().tokens_type in ("MULTIPLY", "DIVIDE", "MODULO"):  # verifica operadores de multiplicacao
-        token = self.tokenAtual().tokens_type  # pega o operador
-        self.avancaToken()  # consome o operador
-        self.expressaoUnaria()  # passa para a proxima expressao depois do multiplicativo
+    def expressaoMultiplicativa(self):
+    #analisa expressao multiplicativa
+        self.expressaoUnaria()  # começa analisando expressões unarias (+,-, ...)
+        while self.tokenAtual().tokens_type in ("MULTIPLY", "DIVIDE", "MODULO"):  # verifica operadores de multiplicacao
+            token = self.tokenAtual().tokens_type  # pega o operador
+            self.avancaToken(token)  # consome o operador
+            self.expressaoUnaria()  # passa para a proxima expressao depois do multiplicativo
 
-def expressaoUnaria(self):
- #analisa expressao unaria
-    if self.tokenAtual().tokens_type in ("PLUS", "MINUS"):  # checa se é mais(+) ou menos(-)
-        self.avancaToken()  # consome
-        self.expressaoUnaria() 
-    elif self.tokenAtual().tokens_type == "NOT":  # se for ! ele consome
-        self.avancaToken()
-        self.expressaoRelacional()
-    elif self.tokenAtual().tokens_type in ("ID", "NUM_INT", "NUM_FLOAT", "STRING", "TEXTO"):  # checa se é valor literal
-        self.avancaToken()  #consome
-    elif self.tokenAtual().tokens_type == "LPAREN":  # checa se é parentese
-        self.avancaToken()
-        self.expressao()  
-        self.avancaToken()  
-    else:
-        self.erro("expressão unária esperada")
+    def expressaoUnaria(self):
+        if self.tokenAtual().tokens_type == "MINUS":
+            self.avancaToken("MINUS")
+            self.expressaoUnaria()
+        elif self.tokenAtual().tokens_type in ("PLUSPLUS", "MINUSMINUS"):  # checa se é mais(+) ou menos(-)
+            token = self.tokenAtual().tokens_type 
+            self.avancaToken(token)  # consome
+            self.expressaoPostfix() 
+        else:
+            self.expressaoPostfix()
 
-def expressaoPostfix(self):
-   # analisa expressao postfix
-    self.primaria()  # analisa tokens primarios
-    while self.tokenAtual().tokens_type in ("LBRACKET", "LPAREN", "DOT", "ARROW"):
-        if self.tokenAtual().tokens_type == "LBRACKET":  # se for um arrat
-            self.avancaToken()  # consome o Lbracket
-            self.expressao()  # analisa expressao
-            self.avancaToken()  # consome
-        elif self.tokenAtual().tokens_type == "LPAREN":  
-            self.avancaToken()  # consome parenteses
-            if self.tokenAtual().tokens_type != "RPAREN":
-                self.argumentos()  # analisa args
-            self.avancaToken()  # consome parenteses
-        elif self.tokenAtual().tokens_type == "DOT":  #objeto-> campo
-            self.avancaToken()  # consome ponto
-            self.avancaToken() 
-        elif self.tokenAtual().tokens_type == "ARROW":  # acesso a objeto -> campo
-            self.avancaToken()  # consome ->
-            self.avancaToken()  # consome identificador
+    def expressaoPostfix(self):
+    # analisa expressao postfix
+        self.primaria()  # analisa tokens primarios
+        while self.tokenAtual().tokens_type in ("LBRACKET", "LPAREN", "DOT", "ARROW"):
+            if self.tokenAtual().tokens_type == "LBRACKET":  # se for um arrat
+                self.avancaToken("LBRACKET")  # consome o Lbracket
+                self.expressao()  # analisa expressao
+                self.avancaToken("RBRACKET")  # consome
+            elif self.tokenAtual().tokens_type == "LPAREN":  
+                self.avancaToken("LPAREN")  # consome parenteses
+                if self.tokenAtual().tokens_type != "RPAREN":
+                    self.argumentos()  # analisa args
+                self.avancaToken("RPAREN")  # consome parenteses
+            elif self.tokenAtual().tokens_type == "DOT":  #objeto-> campo
+                self.avancaToken("DOT")  # consome ponto
+                self.avancaToken("ID") 
+            elif self.tokenAtual().tokens_type == "ARROW":  # acesso a objeto -> campo
+                self.avancaToken("ARROW")  # consome ->
+                self.avancaToken("ID")  # consome identificador
 
-def argumentos(self):
-    self.expressaoLista()
+    def argumentos(self):
+        if self.tokenAtual().tokens_type == "RPAREN":
+            return
+        else:
+            self.expressaoLista()
 
     def expressaoLista(self):
         self.expressao()
         while self.tokenAtual().tokens_type == "COMMA": #se houver virgula consome e analisa.
-            self.avancaToken()
+            self.avancaToken("COMMA")
             self.expressao()
-def primaria(self):
- 
-    if self.tokenAtual().tokens_type == "ID":  
-        self.avancaToken() 
-    elif self.tokenAtual().tokens_type in ("NUM_INT", "NUM_DEC"):  
-        self.avancaToken() 
-    elif self.tokenAtual().tokens_type == "TEXTO":  
-        self.avancaToken()  
-    elif self.tokenAtual().tokens_type == "LPAREN":  
-        self.avancaToken()
-        self.expressao()  
-        self.avancaToken() 
-    else:
-        self.erro("expressão primária esperada")
+
+    def primaria(self):
+    
+        if self.tokenAtual().tokens_type == "ID":  
+            self.avancaToken("ID") 
+        elif self.tokenAtual().tokens_type in ("NUM_INT", "NUM_DEC"): 
+            token = self.tokenAtual().tokens_type
+            self.avancaToken(token)
+        elif self.tokenAtual().tokens_type == "STRING":  
+            self.avancaToken("STRING")  
+        elif self.tokenAtual().tokens_type == "LPAREN":  
+            self.avancaToken("LPAREN")
+            self.expressao()  
+            self.avancaToken("RPAREN") 
+        else:
+            self.erro("expressão primária esperada")
+
+if __name__ == "__main__":
+    tokens = [
+        Tokens("IF", "if", 1, 1),
+        Tokens("LPAREN", "(", 1, 4),
+        Tokens("ID", "x", 1, 5),
+        Tokens("GREATER_THAN", ">", 1, 7),
+        Tokens("NUM_INT", "10", 1, 9),
+        # Falta o "RPAREN"
+        Tokens("LBRACE", "{", 1, 13),
+        Tokens("RETURN", "return", 2, 1),
+        Tokens("ID", "x", 2, 8),
+        Tokens("RBRACE", "}", 3, 1)
+        ]
+
+    try:
+        analisador = AnalisadorSintatico(tokens)
+        if analisador.programa():
+            print("Programa válido!")
+    except Exception as e:
+        print("Erro encontrado em:", e)
