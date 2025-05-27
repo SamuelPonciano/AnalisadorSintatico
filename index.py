@@ -342,16 +342,7 @@ class AnalisadorSintatico:
 
 if __name__ == "__main__":
     tokens = [
-        Tokens("IF", "if", 1, 1),
-        Tokens("LPAREN", "(", 1, 4),
-        Tokens("ID", "x", 1, 5),
-        Tokens("GREATER_THAN", ">", 1, 7),
-        Tokens("NUM_INT", "10", 1, 9),
-        # Falta o "RPAREN"
-        Tokens("LBRACE", "{", 1, 13),
-        Tokens("RETURN", "return", 2, 1),
-        Tokens("ID", "x", 2, 8),
-        Tokens("RBRACE", "}", 3, 1)
+        # Os tokens de Exemplo ficam aqui
         ]
 
     try:
